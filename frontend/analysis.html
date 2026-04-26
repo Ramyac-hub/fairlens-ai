@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FairLens AI – Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#050d1f; --sidebar:#071428; --card:#0a1e3d;
+    --accent:#00c6ff; --teal:#00e5cc; --warn:#ffb300;
+    --danger:#ff4757; --success:#2ed573;
+    --text:#e8f4fd; --muted:#6b8cae; --border:#1a3a5c;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Exo 2',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; }
+
+  /* SIDEBAR */
+  .sidebar { width:220px; min-height:100vh; background:var(--sidebar); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; left:0; top:0; z-index:100; }
+  .logo { padding:20px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .logo-icon { width:38px; height:38px; background:linear-gradient(135deg,#00c6ff,#0072ff); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .logo-text h2 { font-family:'Orbitron',monospace; font-size:13px; color:#fff; letter-spacing:1px; }
+  .logo-text p { font-size:10px; color:var(--muted); }
+  .nav { flex:1; padding:16px 10px; }
+  .nav a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; color:var(--muted); text-decoration:none; font-size:13px; font-weight:600; margin-bottom:4px; transition:.2s; }
+  .nav a:hover, .nav a.active { background:linear-gradient(90deg,rgba(0,198,255,.15),transparent); color:var(--accent); border-left:3px solid var(--accent); }
+  .sidebar-footer { padding:16px; border-top:1px solid var(--border); }
+  .sidebar-badge { background:linear-gradient(135deg,rgba(0,198,255,.1),rgba(0,114,255,.1)); border:1px solid rgba(0,198,255,.3); border-radius:10px; padding:12px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .sidebar-badge strong { color:var(--teal); font-family:'Orbitron',monospace; font-size:10px; display:block; margin-bottom:4px; }
+
+  /* MAIN */
+  .main { margin-left:220px; flex:1; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 28px; border-bottom:1px solid var(--border); background:rgba(5,13,31,.95); backdrop-filter:blur(10px); position:sticky; top:0; z-index:50; }
+  .breadcrumb { font-size:13px; color:var(--muted); }
+  .breadcrumb span { color:var(--text); font-weight:600; }
+  .user-chip { display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; }
+  .user-avatar { width:28px; height:28px; background:linear-gradient(135deg,#00c6ff,#0072ff); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .content { padding:28px; max-width:1080px; }
+
+  /* PAGE HEADER */
+  .page-header { margin-bottom:28px; }
+  .page-header h1 { font-family:'Orbitron',monospace; font-size:22px; font-weight:900; background:linear-gradient(90deg,#fff,#00c6ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; }
+  .page-header p { color:var(--muted); font-size:13px; }
+
+  /* UPLOAD ZONE */
+  .upload-zone { border:2px dashed rgba(0,198,255,.3); border-radius:16px; padding:50px 28px; text-align:center; cursor:pointer; transition:.3s; }
+  .upload-zone:hover { border-color:var(--accent); background:rgba(0,198,255,.025); }
+  .upload-zone .uicon { font-size:46px; display:block; margin-bottom:14px; }
+  .upload-zone h3 { font-family:'Orbitron',monospace; font-size:14px; color:var(--accent); margin-bottom:8px; }
+  .upload-zone p { color:var(--muted); font-size:12px; margin-bottom:20px; }
+  #fileInput { display:none; }
+  .btn-upload { display:inline-flex; align-items:center; gap:8px; padding:11px 28px; background:linear-gradient(135deg,#00c6ff,#0072ff); color:#fff; border-radius:8px; font-family:'Exo 2',sans-serif; font-weight:700; font-size:13px; cursor:pointer; border:none; box-shadow:0 4px 20px rgba(0,114,255,.35); transition:.25s; }
+  .btn-upload:hover { transform:translateY(-2px); }
+  .file-loaded { font-size:11px; color:var(--teal); font-family:'Orbitron',monospace; margin-top:12px; }
+
+  /* MAPPER */
+  .mapper { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:24px; margin-top:18px; display:none; }
+  .mapper h3 { font-family:'Orbitron',monospace; font-size:12px; color:var(--teal); letter-spacing:.5px; margin-bottom:6px; }
+  .mapper-note { font-size:11px; color:var(--muted); margin-bottom:16px; line-height:1.7; }
+  .mapper-note strong { color:var(--accent); }
+  .mapper-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; margin-bottom:16px; }
+  .mapper-item label { display:block; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mapper-item select { width:100%; background:#071428; border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:6px; font-family:'Exo 2',sans-serif; font-size:12px; cursor:pointer; outline:none; transition:.2s; }
+  .mapper-item select:focus { border-color:var(--accent); }
+  .btn-run { display:inline-flex; align-items:center; gap:8px; padding:11px 26px; background:linear-gradient(135deg,#00c6ff,#0072ff); color:#fff; border-radius:8px; font-family:'Exo 2',sans-serif; font-weight:700; font-size:13px; cursor:pointer; border:none; box-shadow:0 4px 20px rgba(0,114,255,.3); transition:.25s; }
+  .btn-run:hover { transform:translateY(-2px); }
+  .btn-sec { display:inline-flex; align-items:center; gap:8px; padding:11px 18px; background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:8px; font-family:'Exo 2',sans-serif; font-size:13px; cursor:pointer; transition:.2s; }
+  .btn-sec:hover { border-color:var(--accent); color:var(--accent); }
+  .err { font-size:11px; color:var(--danger); margin-left:8px; }
+
+  /* SPINNER */
+  .spin-wrap { display:none; flex-direction:column; align-items:center; gap:14px; padding:50px; }
+  .spinner { width:44px; height:44px; border:3px solid rgba(0,198,255,.12); border-top:3px solid var(--accent); border-radius:50%; animation:spin .75s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spin-txt { font-family:'Orbitron',monospace; font-size:11px; color:var(--accent); letter-spacing:2px; }
+
+  /* RESULTS */
+  #results { display:none; }
+
+  /* STAT CARDS */
+  .stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+  .scard { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px 16px; text-align:center; transition:.25s; }
+  .scard:hover { transform:translateY(-2px); box-shadow:0 0 18px rgba(0,198,255,.12); }
+  .scard .val { font-family:'Orbitron',monospace; font-size:24px; font-weight:900; margin-bottom:5px; }
+  .scard .lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .scard .sub { font-size:10px; font-weight:700; margin-top:4px; }
+
+  /* SECTION TITLE */
+  .sec { font-family:'Orbitron',monospace; font-size:11px; color:var(--teal); letter-spacing:.8px; text-transform:uppercase; margin-bottom:14px; }
+
+  /* TWO-COL */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; }
+
+  /* GAUGE */
+  .gauge-wrap { display:flex; flex-direction:column; align-items:center; padding:6px 0; }
+  .gauge-svg { width:196px; height:108px; }
+  .gauge-score { font-family:'Orbitron',monospace; font-size:32px; font-weight:900; margin-top:-4px; }
+  .gauge-lbl { font-size:11px; color:var(--muted); margin-top:4px; }
+  .gpill { margin-top:12px; padding:5px 16px; border-radius:20px; font-family:'Orbitron',monospace; font-size:11px; font-weight:700; }
+
+  /* METRICS LIST */
+  .mitem { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+  .mitem:last-child { border-bottom:none; }
+  .mname { font-size:12px; color:var(--muted); }
+  .mright { display:flex; align-items:center; gap:10px; }
+  .mval { font-family:'Orbitron',monospace; font-size:13px; font-weight:700; }
+
+  /* BARS */
+  .hbar { margin-bottom:12px; }
+  .hbar-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+  .hbar-name { font-size:12px; }
+  .hbar-info { font-size:10px; color:var(--muted); }
+  .hbar-pct { font-size:12px; font-weight:700; font-family:'Orbitron',monospace; }
+  .hbar-track { height:8px; background:rgba(255,255,255,.05); border-radius:4px; overflow:hidden; }
+  .hbar-fill { height:100%; border-radius:4px; width:0; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+
+  /* PILLS / TAGS */
+  .pill { display:inline-block; padding:2px 9px; border-radius:8px; font-size:10px; font-weight:700; }
+  .p-pass { background:rgba(46,213,115,.1); border:1px solid rgba(46,213,115,.3); color:var(--success); }
+  .p-warn { background:rgba(255,179,0,.1); border:1px solid rgba(255,179,0,.3); color:var(--warn); }
+  .p-fail { background:rgba(255,71,87,.1); border:1px solid rgba(255,71,87,.3); color:var(--danger); }
+  .p-blue { background:rgba(0,198,255,.1); border:1px solid rgba(0,198,255,.3); color:var(--accent); }
+
+  /* TABLE */
+  .dtable { width:100%; border-collapse:collapse; font-size:12px; }
+  .dtable th { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.5px; padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; font-weight:600; }
+  .dtable td { padding:10px 10px; border-bottom:1px solid rgba(255,255,255,.03); }
+  .dtable tr:last-child td { border-bottom:none; }
+  .dtable tr:hover td { background:rgba(0,198,255,.025); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:8px; font-size:10px; font-weight:700; }
+  .t-r { background:rgba(255,71,87,.1); border:1px solid rgba(255,71,87,.3); color:var(--danger); }
+  .t-w { background:rgba(255,179,0,.1); border:1px solid rgba(255,179,0,.3); color:var(--warn); }
+  .t-g { background:rgba(46,213,115,.1); border:1px solid rgba(46,213,115,.3); color:var(--success); }
+  .t-b { background:rgba(0,198,255,.1); border:1px solid rgba(0,198,255,.3); color:var(--accent); }
+
+  @keyframes up { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)} }
+  .fade { animation:up .4s ease both; }
+  .fade2 { animation:up .4s .1s ease both; }
+  .fade3 { animation:up .4s .2s ease both; }
+  .fade4 { animation:up .4s .3s ease both; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">⚖️</div>
+    <div class="logo-text"><h2>FairLens AI</h2><p>AI Bias Detection</p></div>
+  </div>
+  <nav class="nav">
+    <a href="index.html"><span>🏠</span> Home</a>
+    <a href="multidomain.html"><span>🌐</span> Multi Domain</a>
+    <a href="analysis.html" class="active"><span>📊</span> Analysis</a>
+    <a href="simulation.html"><span>🧪</span> Simulation</a>
+    <a href="bias-explanation.html"><span>💡</span> AI Bias Explanation</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-badge">
+      <strong>⚖ Fair AI for Fair Future</strong>
+      Build unbiased AI. Build a better world.
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="breadcrumb">Home / <span>Analysis</span></div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="domainTag" style="display:none;font-family:'Orbitron',monospace;font-size:10px;color:var(--accent);padding:5px 12px;background:rgba(0,198,255,.08);border:1px solid rgba(0,198,255,.2);border-radius:20px;letter-spacing:.5px;"></span>
+      <div class="user-chip"><div class="user-avatar">H</div> Hackathon User</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="page-header fade">
+      <h1>📊 Bias Analysis</h1>
+      <p id="subTitle">Upload a CSV dataset to run live fairness analysis across all demographic dimensions.</p>
+    </div>
+
+    <!-- UPLOAD -->
+    <div id="uploadSec" class="fade">
+      <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <span class="uicon">📂</span>
+        <h3>Upload Your Dataset</h3>
+        <p>Any CSV — hiring, loan, healthcare, education, or custom. All metrics computed from your data.</p>
+        <label class="btn-upload" for="fileInput">⬆ Choose CSV File</label>
+        <input type="file" id="fileInput" accept=".csv"/>
+        <div class="file-loaded" id="fileLoaded"></div>
+      </div>
+
+      <!-- COLUMN MAPPER -->
+      <div class="mapper" id="mapper">
+        <h3>🗂 MAP YOUR COLUMNS</h3>
+        <p class="mapper-note">
+          Auto-detected roles below — correct any mistakes. Set <strong>Outcome</strong> (what was decided)
+          and <strong>Sensitive</strong> columns (gender, race, age, etc.) for accurate bias detection.
+        </p>
+        <div class="mapper-grid" id="mapperGrid"></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <button class="btn-run" onclick="runAnalysis()">⚖ Run Analysis</button>
+          <button class="btn-sec" onclick="resetAll()">🔄 Change File</button>
+          <span class="err" id="errMsg"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPINNER -->
+    <div class="spin-wrap" id="spinWrap">
+      <div class="spinner"></div>
+      <div class="spin-txt">COMPUTING BIAS METRICS…</div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results">
+
+      <!-- STAT CARDS -->
+      <div class="stat-row fade" id="statRow"></div>
+
+      <!-- GAUGE + METRICS -->
+      <div class="two-col fade2">
+        <div class="panel">
+          <div class="sec">⚖ Fairness Score</div>
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 196 108">
+              <defs>
+                <linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#ff4757"/>
+                  <stop offset="50%" stop-color="#ffb300"/>
+                  <stop offset="100%" stop-color="#2ed573"/>
+                </linearGradient>
+              </defs>
+              <path d="M22 98 A76 76 0 0 1 174 98" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="14" stroke-linecap="round"/>
+              <path id="gaugeFill" d="M22 98 A76 76 0 0 1 174 98" fill="none" stroke="url(#gGrad)" stroke-width="14" stroke-linecap="round"
+                stroke-dasharray="238" stroke-dashoffset="238" style="transition:stroke-dashoffset 1.4s ease;"/>
+            </svg>
+            <div class="gauge-score" id="gaugeScore">—</div>
+            <div class="gauge-lbl">out of 100</div>
+            <div id="riskPill"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="sec">📐 Fairness Metrics</div>
+          <div id="metricsList"></div>
+        </div>
+      </div>
+
+      <!-- GROUP OUTCOME BARS -->
+      <div class="panel fade3" style="margin-bottom:18px;">
+        <div class="sec" id="groupTitle">👥 Outcome Rate by Group</div>
+        <div id="groupBars"></div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);">
+          Disparity gap: <span id="gapVal" style="font-family:'Orbitron',monospace;font-weight:700;"></span>
+          &nbsp;·&nbsp;
+          Disparate Impact ratio: <span id="diVal" style="font-family:'Orbitron',monospace;font-weight:700;"></span>
+        </div>
+      </div>
+
+      <!-- COL RISK + DETAIL TABLE -->
+      <div class="two-col fade4">
+        <div class="panel">
+          <div class="sec">📋 Column Risk Assessment</div>
+          <table class="dtable">
+            <thead><tr><th>Column</th><th>Role</th><th>Risk</th><th>Action</th></tr></thead>
+            <tbody id="colBody"></tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="sec">🔍 Group Detail Breakdown</div>
+          <table class="dtable">
+            <thead><tr><th>Group</th><th>Positive Rate</th><th>Count</th><th>Bias Gap</th><th>Risk</th></tr></thead>
+            <tbody id="detailBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+/* ── KEYWORDS ── */
+const SK = ['gender','sex','race','ethnicity','age','religion','nationality','disability','marital','color','caste','orientation'];
+const PK = ['zip','postal','code','name','surname','neighborhood','district','school','club'];
+const OK = ['outcome','approved','hired','accepted','label','target','result','decision','granted','status','loan','admit','passed','selected','class','predict','default','flag'];
+const PAL = ['#00c6ff','#2ed573','#ffb300','#a29bfe','#00e5cc','#fd79a8','#74b9ff','#fdcb6e','#ff6b81','#55efc4'];
+
+/* ── CSV ── */
+function parseCSV(txt) {
+  const lines = txt.trim().split(/\r?\n/);
+  const sep = lines[0].includes('\t') ? '\t' : ',';
+  const hdrs = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g,''));
+  const rows = [];
+  for (let i=1; i<lines.length; i++) {
+    const vals = splitLine(lines[i], sep);
+    if (vals.length !== hdrs.length) continue;
+    const o={};
+    hdrs.forEach((h,j)=>{ o[h]=vals[j].trim().replace(/^"|"$/g,''); });
+    rows.push(o);
+  }
+  return {hdrs, rows};
+}
+function splitLine(line, sep) {
+  const r=[]; let c=''; let q=false;
+  for (let i=0;i<line.length;i++) {
+    if (line[i]==='"') { q=!q; continue; }
+    if (line[i]===sep && !q) { r.push(c); c=''; continue; }
+    c+=line[i];
+  }
+  r.push(c); return r;
+}
+function detectRole(col) {
+  const n=col.toLowerCase();
+  if (OK.some(k=>n.includes(k))) return 'outcome';
+  if (SK.some(k=>n.includes(k))) return 'sensitive';
+  if (PK.some(k=>n.includes(k))) return 'proxy';
+  return 'feature';
+}
+function posVal(v) {
+  const s=String(v).toLowerCase().trim();
+  if (['1','yes','true','approved','hired','accepted','pass','passed','granted','admit','admitted','selected','positive','1.0'].includes(s)) return 1;
+  if (['0','no','false','denied','rejected','refused','fail','failed','not selected','negative','0.0'].includes(s)) return 0;
+  const n=parseFloat(s);
+  return isNaN(n) ? null : n>=0.5 ? 1 : 0;
+}
+
+/* ── STATE ── */
+let _rows=[], _hdrs=[];
+
+/* ── FILE UPLOAD ── */
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const {hdrs, rows}=parseCSV(ev.target.result);
+    if (!hdrs.length||!rows.length) return alert('Cannot parse this CSV.');
+    _hdrs=hdrs; _rows=rows;
+    try {
+      localStorage.setItem('fl_h', JSON.stringify(hdrs));
+      localStorage.setItem('fl_r', JSON.stringify(rows.slice(0,8000)));
+      localStorage.setItem('fl_f', file.name);
+    } catch(e){}
+    document.getElementById('fileLoaded').textContent=`✓ ${file.name} · ${rows.length.toLocaleString()} rows`;
+    buildMapper(hdrs);
+    document.getElementById('mapper').style.display='block';
+  };
+  reader.readAsText(file);
+});
+
+function buildMapper(hdrs) {
+  const g=document.getElementById('mapperGrid');
+  g.innerHTML='';
+  hdrs.forEach(h=>{
+    const role=detectRole(h);
+    const d=document.createElement('div');
+    d.className='mapper-item';
+    d.innerHTML=`<label title="${h}">${h}</label>
+      <select data-col="${h}">
+        <option value="feature"   ${role==='feature'   ?'selected':''}>🔧 Feature</option>
+        <option value="sensitive" ${role==='sensitive'  ?'selected':''}>⚠ Sensitive</option>
+        <option value="proxy"     ${role==='proxy'      ?'selected':''}>🔗 Proxy</option>
+        <option value="outcome"   ${role==='outcome'    ?'selected':''}>🎯 Outcome</option>
+        <option value="ignore"                                         >🚫 Ignore</option>
+      </select>`;
+    g.appendChild(d);
+  });
+}
+
+function resetAll(){
+  _rows=[]; _hdrs=[];
+  document.getElementById('fileLoaded').textContent='';
+  document.getElementById('mapper').style.display='none';
+  document.getElementById('results').style.display='none';
+  document.getElementById('fileInput').value='';
+  document.getElementById('errMsg').textContent='';
+  document.getElementById('domainTag').style.display='none';
+}
+
+/* ── RUN ── */
+function runAnalysis(){
+  const sels=document.querySelectorAll('#mapperGrid select');
+  const rmap={};
+  sels.forEach(s=>{ rmap[s.dataset.col]=s.value; });
+  const outcomeCol=Object.keys(rmap).find(k=>rmap[k]==='outcome');
+  const sensitiveCols=Object.keys(rmap).filter(k=>rmap[k]==='sensitive');
+  const err=document.getElementById('errMsg');
+  if (!outcomeCol)           { err.textContent='⚠ Please mark one column as Outcome.'; return; }
+  if (!sensitiveCols.length) { err.textContent='⚠ Please mark at least one Sensitive column.'; return; }
+  err.textContent='';
+  document.getElementById('spinWrap').style.display='flex';
+  document.getElementById('results').style.display='none';
+  setTimeout(()=>{
+    try { compute(_rows, outcomeCol, sensitiveCols, rmap); }
+    catch(e){ console.error(e); alert('Error: '+e.message); }
+    document.getElementById('spinWrap').style.display='none';
+    document.getElementById('results').style.display='block';
+  }, 350);
+}
+
+/* ── COMPUTE ── */
+function compute(rows, outcomeCol, sensitiveCols, rmap){
+  const valid=rows.filter(r=>posVal(r[outcomeCol])!==null);
+  const N=valid.length;
+  const posN=valid.filter(r=>posVal(r[outcomeCol])===1).length;
+  const baseRate=posN/N;
+
+  const primary=sensitiveCols[0];
+  const gStats=groupStats(valid, primary, outcomeCol);
+  const rates=Object.values(gStats).map(g=>g.rate);
+  const maxR=Math.max(...rates), minR=Math.min(...rates);
+  const gap=maxR-minR;
+  const di=maxR>0 ? minR/maxR : 1;
+
+  /* sub-scores */
+  const dp=Math.max(0, 1-gap);
+  const eo=eoScore(valid, primary, outcomeCol);
+  const cal=calibScore(rates, baseRate);
+  const iF=Math.max(0, 1-gap*1.4);
+  const fair=Math.round(((dp+eo+di+cal+iF)/5)*100);
+
+  const metrics=[
+    {name:'Demographic Parity', val:dp.toFixed(2),  s:dp>=0.8?'PASS':dp>=0.6?'WARN':'FAIL'},
+    {name:'Disparate Impact',   val:di.toFixed(2),  s:di>=0.8?'PASS':di>=0.6?'WARN':'FAIL'},
+    {name:'Equalized Odds',     val:eo.toFixed(2),  s:eo>=0.8?'PASS':eo>=0.6?'WARN':'FAIL'},
+    {name:'Calibration',        val:cal.toFixed(2), s:cal>=0.8?'PASS':cal>=0.6?'WARN':'FAIL'},
+    {name:'Individual Fairness',val:iF.toFixed(2),  s:iF>=0.8?'PASS':iF>=0.6?'WARN':'FAIL'},
+  ];
+
+  const colRisks=Object.entries(rmap)
+    .filter(([,v])=>v!=='ignore'&&v!=='outcome')
+    .map(([col,type])=>{
+      let risk='LOW', action='Keep & Monitor';
+      if (type==='sensitive'){
+        const gs=groupStats(valid,col,outcomeCol);
+        const rs=Object.values(gs).map(g=>g.rate);
+        const g2=rs.length>1?Math.max(...rs)-Math.min(...rs):0;
+        risk=g2>0.2?'HIGH':g2>0.1?'MED':'LOW';
+        action=risk==='HIGH'?'Remove / Anonymise':risk==='MED'?'Audit Closely':'Monitor';
+      } else if(type==='proxy'){ risk='MED'; action='Consider Removing'; }
+      return {col,type,risk,action};
+    });
+
+  const detail=Object.entries(gStats).map(([name,gs])=>{
+    const bg=Math.abs(gs.rate-baseRate);
+    const risk=bg>0.2?'HIGH':bg>0.1?'MED':'LOW';
+    return {name, posRate:(gs.rate*100).toFixed(1)+'%', count:gs.count, biasGap:bg.toFixed(3), risk};
+  });
+
+  /* domain tag */
+  const domain=guessDomain(Object.keys(rmap).join(' '));
+  const dt=document.getElementById('domainTag');
+  dt.textContent=domain; dt.style.display='';
+  document.getElementById('subTitle').textContent=
+    `Live analysis · ${N.toLocaleString()} records · ${sensitiveCols.length} sensitive attribute(s)`;
+
+  renderStats(N, baseRate, fair, di, gap);
+  renderGauge(fair);
+  renderMetrics(metrics);
+  renderGroupBars(gStats, primary, gap, di);
+  renderColTable(colRisks);
+  renderDetail(detail);
+}
+
+/* ── HELPERS ── */
+function groupStats(rows, col, oc){
+  const g={};
+  rows.forEach(r=>{
+    const k=r[col]??'Unknown';
+    if(!g[k]) g[k]={count:0,pos:0};
+    g[k].count++;
+    if(posVal(r[oc])===1) g[k].pos++;
+  });
+  Object.values(g).forEach(v=>{ v.rate=v.pos/v.count; });
+  return Object.fromEntries(Object.entries(g).sort((a,b)=>b[1].rate-a[1].rate).slice(0,10));
+}
+function eoScore(rows, col, oc){
+  const gs=groupStats(rows,col,oc);
+  const rs=Object.values(gs).map(g=>g.rate);
+  if(rs.length<2) return 1;
+  const m=rs.reduce((a,b)=>a+b,0)/rs.length;
+  const std=Math.sqrt(rs.reduce((a,b)=>a+(b-m)**2,0)/rs.length);
+  return Math.max(0, 1-std*3);
+}
+function calibScore(rates, base){
+  if(!rates.length) return 1;
+  const avg=rates.reduce((a,b)=>a+b,0)/rates.length;
+  return Math.max(0.4, 1-Math.abs(avg-base)*2);
+}
+function guessDomain(cols){
+  const c=cols.toLowerCase();
+  if(/hire|job|employ|interview|recrui/.test(c)) return '📋 HIRING';
+  if(/loan|credit|debt|mortgage|borrow/.test(c)) return '🏦 LENDING';
+  if(/admit|college|gpa|grade/.test(c))          return '🎓 EDUCATION';
+  if(/crime|arrest|sentence|jail/.test(c))        return '⚖ CRIMINAL JUSTICE';
+  if(/health|diagnos|medical|patient/.test(c))    return '🏥 HEALTHCARE';
+  return '📊 CUSTOM DATASET';
+}
+
+/* ── RENDER ── */
+function renderStats(N, baseRate, fair, di, gap){
+  const fC=fair>=75?'#2ed573':fair>=55?'#ffb300':'#ff4757';
+  const dC=di>=0.8?'#2ed573':di>=0.6?'#ffb300':'#ff4757';
+  const gC=gap<0.1?'#2ed573':gap<0.2?'#ffb300':'#ff4757';
+  document.getElementById('statRow').innerHTML=`
+    <div class="scard">
+      <div class="val" style="color:${fC}">${fair}/100</div>
+      <div class="lbl">Fairness Score</div>
+      <div class="sub" style="color:${fC}">${fair>=75?'✓ Good':fair>=55?'⚠ Review':'🚨 Critical'}</div>
+    </div>
+    <div class="scard">
+      <div class="val" style="color:${dC}">${di.toFixed(2)}</div>
+      <div class="lbl">Disparate Impact</div>
+      <div class="sub" style="color:${dC}">${di>=0.8?'✓ Fair':'⚠ Biased (< 0.80)'}</div>
+    </div>
+    <div class="scard">
+      <div class="val" style="color:var(--accent)">${N.toLocaleString()}</div>
+      <div class="lbl">Records Analysed</div>
+      <div class="sub" style="color:var(--muted)">Valid outcome rows</div>
+    </div>
+    <div class="scard">
+      <div class="val" style="color:${gC}">${(gap*100).toFixed(1)}%</div>
+      <div class="lbl">Max Disparity Gap</div>
+      <div class="sub" style="color:${gC}">${gap<0.1?'✓ Low':gap<0.2?'⚠ Medium':'🚨 High'}</div>
+    </div>`;
+}
+
+function renderGauge(score){
+  const pct=score/100;
+  setTimeout(()=>{ document.getElementById('gaugeFill').style.strokeDashoffset=238-pct*238; }, 200);
+  const col=score>=75?'#2ed573':score>=55?'#ffb300':'#ff4757';
+  const risk=score>=75?'LOW RISK':score>=55?'MEDIUM RISK':'HIGH RISK';
+  const pcls=score>=75?'p-pass':score>=55?'p-warn':'p-fail';
+  document.getElementById('gaugeScore').textContent=score;
+  document.getElementById('gaugeScore').style.color=col;
+  document.getElementById('riskPill').innerHTML=
+    `<div class="gpill pill ${pcls}">● ${risk}</div>`;
+}
+
+function renderMetrics(metrics){
+  document.getElementById('metricsList').innerHTML=metrics.map(m=>{
+    const col=m.s==='PASS'?'var(--success)':m.s==='WARN'?'var(--warn)':'var(--danger)';
+    const pcls=m.s==='PASS'?'p-pass':m.s==='WARN'?'p-warn':'p-fail';
+    return `<div class="mitem">
+      <div class="mname">${m.name}</div>
+      <div class="mright">
+        <div class="mval" style="color:${col}">${m.val}</div>
+        <span class="pill ${pcls}">${m.s}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGroupBars(gStats, primary, gap, di){
+  document.getElementById('groupTitle').textContent=`👥 Outcome Rate by "${primary}"`;
+  const entries=Object.entries(gStats);
+  document.getElementById('groupBars').innerHTML=entries.map(([name,gs],i)=>{
+    const pct=(gs.rate*100).toFixed(1);
+    const col=PAL[i%PAL.length];
+    return `<div class="hbar">
+      <div class="hbar-top">
+        <span class="hbar-name">${name} <span class="hbar-info">(n=${gs.count.toLocaleString()})</span></span>
+        <span class="hbar-pct" style="color:${col}">${pct}%</span>
+      </div>
+      <div class="hbar-track">
+        <div class="hbar-fill" style="background:${col}" data-w="${pct}"></div>
+      </div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.hbar-fill').forEach(b=>{ b.style.width=b.dataset.w+'%'; });
+  });
+  const gapEl=document.getElementById('gapVal');
+  const diEl=document.getElementById('diVal');
+  gapEl.textContent=(gap*100).toFixed(1)+'%';
+  gapEl.style.color=gap<0.1?'var(--success)':gap<0.2?'var(--warn)':'var(--danger)';
+  diEl.textContent=di.toFixed(2);
+  diEl.style.color=di>=0.8?'var(--success)':di>=0.6?'var(--warn)':'var(--danger)';
+}
+
+function renderColTable(cols){
+  document.getElementById('colBody').innerHTML=cols.map(c=>{
+    const rT=c.risk==='HIGH'?'t-r':c.risk==='MED'?'t-w':'t-g';
+    const tT=c.type==='sensitive'?'t-r':c.type==='proxy'?'t-w':'t-b';
+    const tL=c.type==='sensitive'?'Sensitive':c.type==='proxy'?'Proxy':'Feature';
+    return `<tr>
+      <td style="font-family:'Orbitron',monospace;font-size:10px;">${c.col}</td>
+      <td><span class="tag ${tT}">${tL}</span></td>
+      <td><span class="tag ${rT}">${c.risk}</span></td>
+      <td style="color:var(--muted);font-size:11px;">${c.action}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDetail(rows){
+  document.getElementById('detailBody').innerHTML=rows.map(r=>{
+    const rT=r.risk==='HIGH'?'t-r':r.risk==='MED'?'t-w':'t-g';
+    const bC=parseFloat(r.biasGap)>0.2?'var(--danger)':parseFloat(r.biasGap)>0.1?'var(--warn)':'var(--success)';
+    return `<tr>
+      <td style="font-weight:700;">${r.name}</td>
+      <td style="font-family:'Orbitron',monospace;font-size:11px;">${r.posRate}</td>
+      <td>${r.count.toLocaleString()}</td>
+      <td style="color:${bC};font-family:'Orbitron',monospace;font-size:11px;">${r.biasGap}</td>
+      <td><span class="tag ${rT}">${r.risk}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── RESTORE FROM localStorage ── */
+window.addEventListener('load',()=>{
+  try {
+    const h=localStorage.getItem('fl_h');
+    const r=localStorage.getItem('fl_r');
+    const f=localStorage.getItem('fl_f');
+    if (h&&r){
+      _hdrs=JSON.parse(h); _rows=JSON.parse(r);
+      document.getElementById('fileLoaded').textContent=`✓ ${f||'dataset.csv'} · ${_rows.length.toLocaleString()} rows (restored)`;
+      buildMapper(_hdrs);
+      document.getElementById('mapper').style.display='block';
+    }
+  } catch(e){}
+});
+</script>
+</body>
+</html>
