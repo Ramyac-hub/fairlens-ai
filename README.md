@@ -9,25 +9,7 @@ It ensures that AI systems used in **hiring, finance, and healthcare** are **fai
 ---
 
 ## ❗ Problem Statement
-
-Modern AI systems are used in high-impact decisions such as:
-
-* Hiring candidates 👩‍💼
-* Loan approvals 🏦
-* Medical diagnosis 🏥
-
-However, these systems often:
-
-* Learn from **biased historical datasets**
-* Reinforce discrimination based on **gender, race, age**
-* Lack transparency in decision-making
-
-⚠️ This leads to:
-
-* Unfair outcomes
-* Ethical concerns
-* Loss of trust in AI
-
+AI systems used in hiring, loans, and healthcare may learn from biased historical data, leading to unfair and discriminatory decisions that negatively impact individuals and society.
 ---
 
 ## 💡 Solution
