@@ -1,13 +1,15 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from google import genai
+import google.generativeai as genai
 import os
 import pandas as pd
 import io
 import numpy as np
 
 app = FastAPI()
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 latest_result = {
     "accuracy": 0,
     "fairness": 0,
