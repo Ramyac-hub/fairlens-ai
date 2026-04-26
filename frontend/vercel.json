@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/analysis", "destination": "/analysis.html" },
+    { "source": "/bias-explanation", "destination": "/bias-explanation.html" },
+    { "source": "/multi-domain", "destination": "/multi-domain.html" },
+    { "source": "/simulation", "destination": "/simulation.html" }
+  ]
+}
