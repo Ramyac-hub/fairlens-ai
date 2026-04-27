@@ -1,16 +1,15 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
 export default defineConfig({
-  plugins: [react()],
   build: {
     rollupOptions: {
       input: {
-        main: 'index.html',
-        analysis: 'analysis.html',
-        multidomain: 'multi-domain.html',
-        biasexplanation: 'bias-explanation.html',
-        simulation: 'simulation.html'
+        main: resolve(__dirname, 'index.html'),
+        analysis: resolve(__dirname, 'analysis.html'),
+        simulation: resolve(__dirname, 'simulation.html'),
+        'multi-domain': resolve(__dirname, 'multi-domain.html'),
+        'bias-explanation': resolve(__dirname, 'bias-explanation.html')
       }
     }
   }
