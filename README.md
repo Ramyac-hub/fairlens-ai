@@ -1,6 +1,6 @@
 # ⚖️ FairLens AI – Unbiased AI Decision System
-
-## 🚀 Overview
+  🚀**Live Demo** https://fairlens-ai-psi.vercel.app
+##  Overview
 
 FairLens AI is a complete **AI Bias Detection & Mitigation Platform** that helps identify, analyze, and fix bias in machine learning systems before deployment.
 
