@@ -184,19 +184,21 @@ async function connect() {
 async function gemini(key, prompt) {
   const ctx = getBiasContext();
   const full = ctx + '\n\nQuestion: ' + prompt;
-const res = await fetch("http://127.0.0.1:8000/ask", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    message: prompt
-  })
-});
 
-const data = await res.json();
-if (!res.ok) throw new Error(data?.error?.message || 'API Error ' + res.status);
-return data.reply;
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: full }] }]
+      })
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'API Error ' + res.status);
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
 }
 
 function getBiasContext() {
@@ -281,20 +283,7 @@ function clearChat() {
 document.getElementById('q').addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.ctrlKey) sendQ();
 });
-async function loadBiasExplanation() {
-  try {
-    const res = await fetch("http://127.0.0.1:8000/bias");
-    const data = await res.json();
 
-    console.log("Bias data:", data);
-
-    updateBiasUI(data);
-  } catch (err) {
-    console.log("Error loading bias explanation:", err);
-  }
-}
-
-window.onload = loadBiasExplanation;
 function updateBiasUI(data) {
 
   // Gemini AI explanation
@@ -313,5 +302,6 @@ function updateBiasUI(data) {
 
 }
 </script>
+<script src="script.js"></script>
 </body>
 </html>
